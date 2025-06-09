@@ -1,5 +1,6 @@
 streamlit
-pandas
 pdfplumber
+pandas
 plotly
-openai
+transformers
+torch
