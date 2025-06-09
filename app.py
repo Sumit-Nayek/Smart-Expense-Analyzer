@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from utils import extract_text_from_pdf, ask_llm_to_structure, csv_text_to_df
+from utils import extract_text_from_pdf, ask_llm_to_structure, csv_text_to_df, load_llm_pipeline
 
+llm_pipe = load_llm_pipeline()
 st.set_page_config(page_title="Smart Expense Analyzer 💸", layout="wide")
 st.title("📊 Smart Expense Analyzer")
 st.markdown("Upload a PhonePe, Paytm, or Bank **PDF transaction history**, and we'll show your **expense patterns**!")
@@ -17,8 +18,8 @@ if uploaded_file:
     st.text_area("📄 Extracted Text Preview", text[:2000], height=200)
 
     if st.button("🚀 Analyze Expenses with LLM"):
-        with st.spinner("💬 Talking to LLM..."):
-            csv_output = ask_llm_to_structure(text)
+        with st.spinner("💬 Processing with Hugging Face LLM..."):
+            csv_output = ask_llm_to_structure(text, llm_pipe)
 
         st.code(csv_output[:1000], language="csv")  # Preview raw LLM CSV
 
