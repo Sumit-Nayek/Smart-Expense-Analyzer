@@ -1,5 +1,5 @@
 streamlit
 pandas
-pdfplumber==0.10.2
 plotly
 requests
+pdfplumber==0.10.2
