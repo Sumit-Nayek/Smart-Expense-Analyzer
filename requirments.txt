@@ -1,6 +1,5 @@
 streamlit
-pdfplumber
 pandas
+pdfplumber
 plotly
-transformers
-torch
+requests
