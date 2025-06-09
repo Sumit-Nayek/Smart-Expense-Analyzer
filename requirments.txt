@@ -2,4 +2,4 @@ streamlit
 pandas
 plotly
 requests
-pdfplumber==0.10.2
+PyMuPDF
