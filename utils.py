@@ -41,3 +41,8 @@ def csv_text_to_df(csv_text):
         return pd.read_csv(io.StringIO(csv_text))
     except:
         return None
+def csv_text_to_df(csv_text):
+    try:
+        return pd.read_csv(io.StringIO(csv_text))
+    except:
+        return None
