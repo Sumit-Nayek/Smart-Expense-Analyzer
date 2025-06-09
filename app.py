@@ -2,13 +2,17 @@ import streamlit as st
 from utils import extract_text_from_pdf, ask_hf_inference_api, csv_text_to_df
 import pandas as pd
 import plotly.express as px
+import streamlit as st
+from utils import extract_text_from_pdf, ask_hf_inference_api, csv_text_to_df
+
+hf_token = st.secrets["HF_API_TOKEN"]
 
 st.set_page_config(page_title="Smart Expense Analyzer 💸", layout="wide")
 st.title("📊 Smart Expense Analyzer")
 st.markdown("Upload your PhonePe, Paytm, or Bank **PDF**, and view your **expense insights**.")
 
-# Hugging Face token input (for development)
-hf_token = st.text_input("🔐 Enter your Hugging Face API Token", type="password")
+# # Hugging Face token input (for development)
+# hf_token = st.text_input("🔐 Enter your Hugging Face API Token", type="password")
 
 uploaded_file = st.file_uploader("📁 Upload Transaction PDF", type=["pdf"])
 
