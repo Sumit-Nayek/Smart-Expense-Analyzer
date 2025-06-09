@@ -2,10 +2,10 @@
 import pandas as pd
 # import requests
 import io
-import fitz  # PyMuPDF
+import pymupdf  # PyMuPDF
 
 def extract_text_from_pdf(file):
-    pdf_doc = fitz.open(stream=file.read(), filetype="pdf")
+    pdf_doc = pymupdf.open(stream=file.read(), filetype="pdf")
     full_text = ""
     for page in pdf_doc:
         full_text += page.get_text()
