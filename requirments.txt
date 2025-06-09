@@ -2,4 +2,4 @@ streamlit
 pandas
 plotly
 requests
-pymupdf
+pymupdf>=1.23.0
