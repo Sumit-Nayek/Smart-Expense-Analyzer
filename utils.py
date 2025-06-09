@@ -1,13 +1,16 @@
-import pdfplumber
+# import pdfplumber
 import pandas as pd
-import requests
+# import requests
 import io
+import fitz  # PyMuPDF
 
-# Function to extract text from PDF
-def extract_text_from_pdf(pdf_file):
-    with pdfplumber.open(pdf_file) as pdf:
-        pages = [page.extract_text() for page in pdf.pages if page.extract_text()]
-    return "\n".join(pages)
+def extract_text_from_pdf(file):
+    pdf_doc = fitz.open(stream=file.read(), filetype="pdf")
+    full_text = ""
+    for page in pdf_doc:
+        full_text += page.get_text()
+    return full_text
+
 
 # Function to call Hugging Face Inference API
 def ask_hf_inference_api(text, hf_token, model_name="mistralai/Mistral-7B-Instruct-v0.2"):
