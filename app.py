@@ -151,7 +151,7 @@
 #     st.info("Please upload a PDF or CSV file to begin.")
 import streamlit as st
 import pandas as pd
-import pypdf  # Replaced PyPDF2 with pypdf
+import pdfplumber  # Replaced PyPDF2 with pdfplumber
 import io
 import re
 from datetime import datetime
@@ -163,16 +163,24 @@ from sklearn.cluster import KMeans
 # Set page config
 st.set_page_config(page_title="Smart Expense Analyzer", layout="wide")
 
-# Function to extract text from PDF using pypdf
+# Function to extract text from PDF using pdfplumber
 def extract_text_from_pdf(pdf_file):
     try:
-        pdf_reader = pypdf.PdfReader(pdf_file)
-        text = ""
-        for page in pdf_reader.pages:
-            extracted_text = page.extract_text()
-            if extracted_text:
-                text += extracted_text
-        return text
+        with pdfplumber.open(pdf_file) as pdf:
+            text = ""
+            for page in pdf.pages:
+                # Try extracting plain text
+                extracted_text = page.extract_text()
+                if extracted_text:
+                    text += extracted_text + "\n"
+                # If text is insufficient, try extracting tables
+                if not extracted_text or len(extracted_text.strip()) < 50:
+                    tables = page.extract_tables()
+                    for table in tables:
+                        for row in table:
+                            # Join row cells into a single string
+                            text += " ".join(str(cell) for cell in row if cell) + "\n"
+            return text
     except Exception as e:
         st.error(f"Error reading PDF: {e}")
         return ""
