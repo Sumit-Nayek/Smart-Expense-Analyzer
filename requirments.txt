@@ -2,4 +2,4 @@ streamlit
 pandas
 plotly
 requests
-PyPDF2==3.0.1
+pypdf
