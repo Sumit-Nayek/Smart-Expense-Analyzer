@@ -162,7 +162,7 @@
 
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+# import plotly.express as px
 
 from dotenv import load_dotenv
 from utils.file_handler import load_file
