@@ -1,7 +1,7 @@
 # utils/file_handler.py
 
 import pandas as pd
-import pdfplumber
+import pdfplumber ## This is the library that is causing the problem
 import io
 
 def load_file(uploaded_file):
@@ -29,3 +29,4 @@ def extract_text_from_pdf(uploaded_file):
         for page in pdf.pages:
             text += page.extract_text() or ""
     return text.strip()
+
