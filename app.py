@@ -8,9 +8,6 @@ from utils.file_handler import load_file
 from utils.eda import generate_eda_report
 from utils.llm_agent import summarize_report, ask_question
 
-# Load environment variables (.env) to get Hugging Face token
-# load_dotenv()
-
 # Set Streamlit page config
 st.set_page_config(page_title="Smart Report Analyzer", layout="wide")
 st.title("📊 Smart Report Analyzer")
