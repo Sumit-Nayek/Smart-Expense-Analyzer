@@ -1,9 +1,6 @@
 
 import streamlit as st
 import pandas as pd
-# import plotly.express as px
-
-# from dotenv import load_dotenv
 from utils.file_handler import load_file
 from utils.eda import generate_eda_report
 from utils.llm_agent import summarize_report, ask_question
