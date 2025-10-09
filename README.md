@@ -116,16 +116,4 @@ pip install pandas numpy scikit-learn matplotlib seaborn streamlit
 * [ ] Anomaly detection (fraudulent transactions)
 * [ ] Dashboard integration
 
----
 
-## 🤝 Contributing
-
-Contributions are welcome! Please open an **issue** or submit a **pull request** for improvements.
-
----
-
-## 📜 License
-
-This project is licensed under the **MIT License**.
-
----
