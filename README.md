@@ -54,30 +54,6 @@ cd Smart-Expense-Analyzer
 pip install -r requirements.txt
 ```
 
----
-
-## ▶️ Usage
-
-### 1. Run from Command Line
-
-```bash
-python app.py --file data/expenses.csv
-```
-
-### 2. Run as a Streamlit Web App
-
-```bash
-streamlit run app.py
-```
-
-### Example Output
-
-* Expense summary (total, mean, median)
-* Top 5 categories by spending
-* Monthly expense trend chart
-* Forecast for next month’s expenses
-
----
 
 ## 🧩 Dependencies
 
@@ -88,13 +64,6 @@ streamlit run app.py
 * matplotlib / seaborn
 * streamlit (if using web app)
 
-Install via:
-
-```bash
-pip install pandas numpy scikit-learn matplotlib seaborn streamlit
-```
-
----
 
 ## 📊 Example Input
 
