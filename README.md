@@ -44,17 +44,6 @@ Smart-Expense-Analyzer/
 
 ---
 
-## ⚙️ Installation
-
-Clone the repository and install dependencies:
-
-```bash
-git clone https://github.com/your-username/Smart-Expense-Analyzer.git
-cd Smart-Expense-Analyzer
-pip install -r requirements.txt
-```
-
-
 ## 🧩 Dependencies
 
 * Python 3.8+
