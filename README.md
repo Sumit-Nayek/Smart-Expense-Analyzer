@@ -64,14 +64,6 @@ Smart-Expense-Analyzer/
 | 2025-01-03 | Transport | 120    | Cash            | Auto fare       |
 | 2025-01-04 | Shopping  | 1500   | Credit Card     | Online Purchase |
 
----
 
-## ✅ Roadmap
-
-* [x] Summary statistics module
-* [x] Feature detection
-* [ ] Expense forecasting model
-* [ ] Anomaly detection (fraudulent transactions)
-* [ ] Dashboard integration
 
 
