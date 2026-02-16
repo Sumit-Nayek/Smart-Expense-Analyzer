@@ -102,7 +102,7 @@ class TransactionExtractor:
             line1 = lines[start_idx].strip()
             transaction['raw_lines'].append(line1)
 
-            # Extract date and time from line 1
+            # Extract date from line 1
             date_time = self._extract_date_time(line1)
             if date_time:
                 transaction.update(date_time)
@@ -117,20 +117,45 @@ class TransactionExtractor:
             if amount:
                 transaction['amount'] = amount
 
-            # Line 2: Transaction ID and UTR (if available)
-            if start_idx + 1 < len(lines):
-                line2 = lines[start_idx + 1].strip()
-                if line2 and ('Transaction ID' in line2 or 'UTR' in line2):
-                    transaction['raw_lines'].append(line2)
-                    tx_info = self._extract_transaction_ids(line2)
-                    transaction.update(tx_info)
+            # Look for time in the next few lines if not found in line1
+            if 'time' not in transaction:
+                # Check next line for time
+                if start_idx + 1 < len(lines):
+                    next_line = lines[start_idx + 1].strip()
+                    time_match = re.search(r'(\d{1,2}:\d{2}\s*[ap]m)', next_line.lower())
+                    if time_match:
+                        transaction['time'] = time_match.group(1)
+                        transaction['raw_lines'].append(next_line)
+                
+                # If still not found, check the line after that
+                if 'time' not in transaction and start_idx + 2 < len(lines):
+                    next_next_line = lines[start_idx + 2].strip()
+                    time_match = re.search(r'(\d{1,2}:\d{2}\s*[ap]m)', next_next_line.lower())
+                    if time_match:
+                        transaction['time'] = time_match.group(1)
+                        transaction['raw_lines'].append(next_next_line)
 
-            # Line 3: Additional info (like "Paid by XXXXXXX")
-            if start_idx + 2 < len(lines):
-                line3 = lines[start_idx + 2].strip()
-                if line3 and 'Paid by' in line3:
-                    transaction['raw_lines'].append(line3)
-                    transaction['paid_by'] = line3.replace('Paid by', '').strip()
+            # Line containing Transaction ID and UTR (if available)
+            # Check all subsequent lines for transaction IDs
+            for offset in [1, 2, 3]:
+                if start_idx + offset < len(lines):
+                    check_line = lines[start_idx + offset].strip()
+                    if check_line and ('Transaction ID' in check_line or 'UTR' in check_line):
+                        if check_line not in transaction['raw_lines']:
+                            transaction['raw_lines'].append(check_line)
+                        tx_info = self._extract_transaction_ids(check_line)
+                        transaction.update(tx_info)
+                        break
+
+            # Line with "Paid by" info (if available)
+            for offset in [1, 2, 3]:
+                if start_idx + offset < len(lines):
+                    check_line = lines[start_idx + offset].strip()
+                    if check_line and 'Paid by' in check_line:
+                        if check_line not in transaction['raw_lines']:
+                            transaction['raw_lines'].append(check_line)
+                        transaction['paid_by'] = check_line.replace('Paid by', '').strip()
+                        break
 
             return transaction
 
@@ -155,7 +180,7 @@ class TransactionExtractor:
 
     def _extract_date_time(self, line: str) -> Dict:
         """
-        Extract date and time from line
+        Extract date from line (time extraction moved to separate logic)
         """
         result = {}
 
@@ -171,7 +196,7 @@ class TransactionExtractor:
             except:
                 pass
 
-        # Extract time (e.g., "01:20 pm")
+        # Also check for time in the same line (just in case)
         time_match = re.search(r'(\d{1,2}:\d{2}\s*[ap]m)', line.lower())
         if time_match:
             result['time'] = time_match.group(1)
@@ -263,8 +288,7 @@ class TransactionExtractor:
             print(f"  🆔 Transaction ID: {transaction['transaction_id']}")
         if transaction.get('utr_number'):
             print(f"  🔢 UTR: {transaction['utr_number']}")
-        if transaction.get('paid_by'):
-            print(f"  💳 Paid by: {transaction['paid_by']}")
+        
 
     def _create_dataframe(self) -> pd.DataFrame:
         """
@@ -277,7 +301,7 @@ class TransactionExtractor:
 
         # Select and order relevant columns
         columns = ['date', 'time', 'recipient', 'type', 'amount',
-                  'transaction_id', 'utr_number', 'paid_by', 'page_number']
+                  'transaction_id', 'utr_number']
 
         # Keep only columns that exist
         available_cols = [col for col in columns if col in df.columns]
