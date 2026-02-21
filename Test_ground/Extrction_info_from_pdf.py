@@ -24,9 +24,9 @@ class TransactionExtractor:
         """
         Main method to extract all transactions from PDF
         """
-        print(f"\n{'='*60}")
+
         print(f"Extracting transactions from: {self.pdf_path}")
-        print('='*60)
+
 
         try:
             with pdfplumber.open(self.pdf_path) as pdf:
@@ -278,7 +278,7 @@ class TransactionExtractor:
         """
         Print individual transaction details
         """
-        print(f"\n  {'─'*40}")
+        
         print(f"  📅 Date: {transaction.get('date', 'N/A')} {transaction.get('time', '')}")
         print(f"  👤 Recipient: {transaction.get('recipient', 'N/A')}")
         print(f"  💳 Type: {transaction.get('type', 'N/A')}")
@@ -325,7 +325,7 @@ class TransactionExtractor:
 
         print(f"\n{'='*60}")
         print(f"📊 EXTRACTION SUMMARY")
-        print(f"{'='*60}")
+
         print(f"Total transactions found: {len(df)}")
 
         # Calculate totals
@@ -382,9 +382,9 @@ if __name__ == "__main__":
 
         if not df.empty:
             # Additional analysis
-            print(f"\n{'='*60}")
+          
             print("🔍 ADDITIONAL ANALYSIS")
-            print('='*60)
+         
 
             # Group by recipient
             if 'recipient' in df.columns and 'amount' in df.columns:
