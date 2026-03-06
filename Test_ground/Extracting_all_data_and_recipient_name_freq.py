@@ -496,6 +496,6 @@ if __name__ == "__main__":
             print(f"💾 CSV saved: {csv_file}")
 
     except FileNotFoundError:
-        print(f"❌ File '{pdf_file}' not found. Please provide a valid PDF path.")
+        print(f" File '{pdf_file}' not found. Please provide a valid PDF path.")
     except Exception as e:
-        print(f"❌ An error occurred: {str(e)}")
+        print(f" An error occurred: {str(e)}")
