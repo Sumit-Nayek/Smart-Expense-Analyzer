@@ -1,0 +1,348 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from datetime import datetime
+
+# Optional: better styling
+sns.set_style("whitegrid")
+plt.rcParams["figure.figsize"] = (14, 8)
+
+# ------------------------------
+# 1. Load the CSV file
+# ------------------------------
+csv_file = "PhonePe_Statement_Jan2026_Feb2026_transactions.csv"  # <-- change to your file
+df = pd.read_csv(csv_file)
+
+print("First few rows:")
+print(df.head())
+print("\nData columns:", df.columns.tolist())
+print(f"\nTotal transactions: {len(df)}")
+
+# ------------------------------
+# 2. Prepare datetime and time components
+# ------------------------------
+# Check for required columns
+if 'date' not in df.columns:
+    raise ValueError("CSV does not contain a 'date' column.")
+if 'recipient' not in df.columns:
+    raise ValueError("CSV does not contain a 'recipient' column.")
+
+# Convert date to datetime
+df['parsed_date'] = pd.to_datetime(df['date'], format='%b %d, %Y', errors='coerce')
+
+# Drop rows with invalid dates
+initial_len = len(df)
+df = df.dropna(subset=['parsed_date'])
+if len(df) < initial_len:
+    print(f"Dropped {initial_len - len(df)} rows with invalid dates.")
+
+# Handle time column if available
+if 'time' in df.columns:
+    # Combine date and time to a single timestamp
+    def combine_date_time(row):
+        try:
+            time_str = str(row['time']).strip()
+            # Try parsing with various formats
+            for fmt in ["%I:%M %p", "%I:%M%p", "%H:%M"]:
+                try:
+                    time_obj = pd.to_datetime(time_str, format=fmt).time()
+                    return pd.Timestamp.combine(row['parsed_date'].date(), time_obj)
+                except:
+                    continue
+            # If all fail, use midnight
+            return pd.Timestamp.combine(row['parsed_date'].date(), datetime.min.time())
+        except:
+            return pd.Timestamp.combine(row['parsed_date'].date(), datetime.min.time())
+    
+    df['timestamp'] = df.apply(combine_date_time, axis=1)
+else:
+    # If no time column, set timestamp to midnight
+    print("Warning: No 'time' column found. Setting all times to midnight.")
+    df['timestamp'] = pd.to_datetime(df['parsed_date'].dt.date)
+
+# Extract time components
+df['hour'] = df['timestamp'].dt.hour
+df['day_of_week'] = df['timestamp'].dt.day_name()
+df['day_of_week_num'] = df['timestamp'].dt.dayofweek  # Monday=0, Sunday=6
+df['date_only'] = df['timestamp'].dt.date
+
+# ------------------------------
+# 3. Filter for spending (DEBIT) if type column exists
+# ------------------------------
+if 'type' in df.columns:
+    spending_df = df[df['type'].str.upper().str.contains('DEBIT')].copy()
+    print(f"\nSpending transactions (DEBIT): {len(spending_df)}")
+else:
+    print("Warning: No 'type' column found. Analyzing all transactions.")
+    spending_df = df.copy()
+
+if spending_df.empty:
+    print("No spending transactions found. Exiting.")
+    exit()
+
+# ------------------------------
+# 4. Recipient Analysis by Time and Frequency
+# ------------------------------
+
+# 4.1 Overall recipient statistics
+print("\n" + "="*80)
+print("RECIPIENT ANALYSIS - OVERALL STATISTICS")
+print("="*80)
+
+recipient_stats = spending_df.groupby('recipient').agg(
+    total_transactions=('recipient', 'count'),
+    total_amount=('amount', 'sum'),
+    avg_amount=('amount', 'mean'),
+    min_amount=('amount', 'min'),
+    max_amount=('amount', 'max'),
+    first_transaction=('timestamp', 'min'),
+    last_transaction=('timestamp', 'max')
+).reset_index()
+
+# Add frequency per day
+def calculate_avg_days_between(row):
+    if row['total_transactions'] > 1:
+        days_diff = (row['last_transaction'] - row['first_transaction']).days
+        return days_diff / (row['total_transactions'] - 1)
+    else:
+        return float('inf')
+
+recipient_stats['avg_days_between'] = recipient_stats.apply(calculate_avg_days_between, axis=1)
+
+recipient_stats = recipient_stats.sort_values('total_transactions', ascending=False)
+
+print("\nTop 20 recipients by transaction count:")
+print(recipient_stats.head(20).to_string(index=False))
+
+# 4.2 Hour of day distribution for each recipient
+print("\n" + "="*80)
+print("RECIPIENT ANALYSIS - HOURLY DISTRIBUTION")
+print("="*80)
+
+# Get top N recipients for detailed analysis
+top_n = 10
+top_recipients = recipient_stats.head(top_n)['recipient'].tolist()
+top_df = spending_df[spending_df['recipient'].isin(top_recipients)]
+
+# Create hour distribution - FIXED VERSION (without fill_value)
+# Method 1: Using pivot_table
+hour_pivot = pd.pivot_table(
+    top_df,
+    values='amount',
+    index='recipient',
+    columns='hour',
+    aggfunc='count',
+    fill_value=0  # fill_value works in pivot_table
+)
+
+# Ensure all hours 0-23 are present
+for hour in range(24):
+    if hour not in hour_pivot.columns:
+        hour_pivot[hour] = 0
+
+# Sort columns
+hour_pivot = hour_pivot[sorted(hour_pivot.columns)]
+
+print("\nHourly transaction count for top recipients:")
+print(hour_pivot)
+
+# 4.3 Day of week distribution for each recipient
+print("\n" + "="*80)
+print("RECIPIENT ANALYSIS - DAY OF WEEK DISTRIBUTION")
+print("="*80)
+
+# Order days properly
+day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+top_df['day_of_week'] = pd.Categorical(top_df['day_of_week'], categories=day_order, ordered=True)
+
+# Using pivot_table instead of crosstab
+day_pivot = pd.pivot_table(
+    top_df,
+    values='amount',
+    index='recipient',
+    columns='day_of_week',
+    aggfunc='count',
+    fill_value=0
+)
+
+print("\nDaily transaction count for top recipients:")
+print(day_pivot)
+
+# 4.4 Complete time analysis - pivot table of recipient by hour and day
+print("\n" + "="*80)
+print("RECIPIENT ANALYSIS - COMPLETE TIME MATRIX")
+print("="*80)
+
+# Create a combined time slot (Day + Hour)
+top_df['day_hour'] = top_df['day_of_week'].astype(str) + ' ' + top_df['hour'].astype(str) + ':00'
+
+# Pivot table for top recipients
+# Limit to avoid too many columns
+time_matrix = pd.pivot_table(
+    top_df,
+    values='amount',
+    index='recipient',
+    columns='day_hour',
+    aggfunc='count',
+    fill_value=0
+)
+
+print("\nSample of time matrix (first 10 columns):")
+print(time_matrix.iloc[:, :min(10, time_matrix.shape[1])])
+
+# ------------------------------
+# 5. Visualizations
+# ------------------------------
+
+# 5.1 Heatmap - Hour vs Day of Week for all spending
+print("\n" + "="*80)
+print("GENERATING VISUALIZATIONS...")
+print("="*80)
+
+# Create hour-day pivot for all spending - using pivot_table
+hour_day_pivot = pd.pivot_table(
+    spending_df,
+    values='amount',
+    index='hour',
+    columns='day_of_week',
+    aggfunc='count',
+    fill_value=0
+)
+
+# Reorder columns by day of week
+hour_day_pivot = hour_day_pivot[day_order]
+
+plt.figure(figsize=(12, 8))
+sns.heatmap(hour_day_pivot, annot=True, fmt='d', cmap='YlOrRd', cbar_kws={'label': 'Transaction Count'})
+plt.title('Transaction Frequency: Hour of Day vs Day of Week')
+plt.xlabel('Day of Week')
+plt.ylabel('Hour of Day')
+plt.tight_layout()
+plt.savefig('hour_day_heatmap.png', dpi=150, bbox_inches='tight')
+plt.show()
+
+# 5.2 Top recipients - hourly distribution bar chart
+fig, axes = plt.subplots(nrows=5, ncols=2, figsize=(16, 20))
+axes = axes.flatten()
+
+for i, recipient in enumerate(top_recipients[:10]):
+    if i < len(axes):
+        recipient_data = spending_df[spending_df['recipient'] == recipient]
+        hour_counts = recipient_data['hour'].value_counts().sort_index()
+        
+        # Ensure all hours are represented
+        hour_counts_full = pd.Series(0, index=range(24))
+        hour_counts_full.update(hour_counts)
+        
+        axes[i].bar(hour_counts_full.index, hour_counts_full.values, color='skyblue', edgecolor='navy')
+        axes[i].set_title(f'{recipient} (Total: {len(recipient_data)} txns)')
+        axes[i].set_xlabel('Hour of Day')
+        axes[i].set_ylabel('Transaction Count')
+        axes[i].set_xticks(range(0, 24, 3))
+
+# Hide any unused subplots
+for j in range(i+1, len(axes)):
+    axes[j].set_visible(False)
+
+plt.suptitle('Top 10 Recipients - Hourly Transaction Distribution', fontsize=16, y=1.02)
+plt.tight_layout()
+plt.savefig('top_recipients_hourly.png', dpi=150, bbox_inches='tight')
+plt.show()
+
+# 5.3 Day of week distribution for top recipients
+plt.figure(figsize=(14, 8))
+day_pivot.T.plot(kind='bar', ax=plt.gca())
+plt.title('Transaction Count by Day of Week - Top Recipients')
+plt.xlabel('Day of Week')
+plt.ylabel('Transaction Count')
+plt.legend(title='Recipient', bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.savefig('top_recipients_dayofweek.png', dpi=150, bbox_inches='tight')
+plt.show()
+
+# ------------------------------
+# 6. Detailed Recipient Report
+# ------------------------------
+print("\n" + "="*80)
+print("DETAILED RECIPIENT REPORT")
+print("="*80)
+
+# For each top recipient, show their peak times
+for recipient in top_recipients:
+    recipient_data = spending_df[spending_df['recipient'] == recipient]
+    
+    print(f"\n📊 {recipient}")
+    print(f"  Total Transactions: {len(recipient_data)}")
+    print(f"  Total Amount: ₹{recipient_data['amount'].sum():,.2f}")
+    print(f"  Average Amount: ₹{recipient_data['amount'].mean():,.2f}")
+    
+    # Peak hour
+    if not recipient_data.empty:
+        hour_counts = recipient_data['hour'].value_counts()
+        if not hour_counts.empty:
+            peak_hour = hour_counts.idxmax()
+            peak_hour_count = hour_counts.max()
+            print(f"  Peak Hour: {peak_hour}:00 ({peak_hour_count} transactions)")
+        
+        # Peak day
+        day_counts = recipient_data['day_of_week'].value_counts()
+        if not day_counts.empty:
+            peak_day = day_counts.idxmax()
+            peak_day_count = day_counts.max()
+            print(f"  Peak Day: {peak_day} ({peak_day_count} transactions)")
+        
+        # Most common transaction amount range
+        amount_ranges = pd.cut(recipient_data['amount'], bins=[0, 100, 500, 1000, 5000, 10000, float('inf')])
+        common_range = amount_ranges.value_counts().idxmax()
+        print(f"  Most Common Amount Range: {common_range}")
+
+# ------------------------------
+# 7. Export results to Excel
+# ------------------------------
+print("\n" + "="*80)
+print("EXPORTING RESULTS...")
+print("="*80)
+
+with pd.ExcelWriter('recipient_time_analysis.xlsx', engine='openpyxl') as writer:
+    # Sheet 1: Overall recipient statistics
+    recipient_stats.to_excel(writer, sheet_name='Recipient_Stats', index=False)
+    
+    # Sheet 2: Hourly distribution for top recipients
+    hour_pivot.to_excel(writer, sheet_name='Hourly_Distribution')
+    
+    # Sheet 3: Day of week distribution
+    day_pivot.to_excel(writer, sheet_name='DayOfWeek_Distribution')
+    
+    # Sheet 4: Complete time matrix (sample - first 50 columns to avoid huge file)
+    time_matrix_sample = time_matrix.iloc[:, :min(50, time_matrix.shape[1])]
+    time_matrix_sample.to_excel(writer, sheet_name='Time_Matrix_Sample')
+    
+    # Sheet 5: Raw data filtered for top recipients
+    top_df.to_excel(writer, sheet_name='Top_Recipients_Data', index=False)
+    
+    # Auto-adjust column widths
+    for sheet_name in writer.sheets:
+        worksheet = writer.sheets[sheet_name]
+        for column in worksheet.columns:
+            max_length = 0
+            col_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            worksheet.column_dimensions[col_letter].width = adjusted_width
+
+print("✅ Analysis complete!")
+print("📊 Visualizations saved as:")
+print("   - hour_day_heatmap.png")
+print("   - top_recipients_hourly.png")
+print("   - top_recipients_dayofweek.png")
+print("📈 Excel report saved as: recipient_time_analysis.xlsx")
+print("📋 CSV summary saved as: recipient_time_summary.csv")
+
+# Also save a CSV summary
+recipient_stats.to_csv('recipient_time_summary.csv', index=False)
