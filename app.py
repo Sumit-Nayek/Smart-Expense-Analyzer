@@ -7,7 +7,7 @@ from utils.llm_agent import summarize_report, ask_question
 
 # Set Streamlit page config
 st.set_page_config(page_title="Smart Report Analyzer", layout="wide")
-st.title("📊 Smart Report Analyzer")
+st.title(" Smart Report Analyzer")
 st.write("Upload a CSV, Excel, or PDF file to get insights and summaries using Hugging Face LLMs.")
 
 # Upload file
