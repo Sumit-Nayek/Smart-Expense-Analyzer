@@ -3,8 +3,6 @@ import re
 from datetime import datetime
 import pandas as pd
 from typing import List, Dict, Optional
-import warnings
-warnings.filterwarnings('ignore')
 
 class TransactionExtractor:
     """
