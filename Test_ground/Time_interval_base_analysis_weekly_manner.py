@@ -1,3 +1,4 @@
+### To Run this we need the "CSV file" so run that code first then use the output csv here.
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns  # optional, for better styling
