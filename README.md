@@ -1,7 +1,7 @@
 
 
 # 💰 Smart-Expense-Analyzer (developemet stage)
-Open to any suggestion from your side😇
+
 Smart-Expense-Analyzer is a data-driven tool designed to **analyze expense data** from Excel (`.xlsx`) or CSV (`.csv`) files. It automatically extracts key features, generates **summary statistics**, and can be extended to perform **predictive analytics** for smarter financial planning.
 
 ---
@@ -64,6 +64,7 @@ Smart-Expense-Analyzer/
 | 2025-01-03 | Transport | 120    | Cash            | Auto fare       |
 | 2025-01-04 | Shopping  | 1500   | Credit Card     | Online Purchase |
 
+## Open to any suggestion from yourside😇
 
 
 
