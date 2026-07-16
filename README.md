@@ -1,8 +1,11 @@
 
 
+
 # 💰 Smart-Expense-Analyzer (developemet stage)
 
 Smart-Expense-Analyzer is a data-driven tool designed to **analyze expense data** from Excel (`.xlsx`) or CSV (`.csv`) files. It automatically extracts key features, generates **summary statistics**, and can be extended to perform **predictive analytics** for smarter financial planning.
+<img width="1306" height="571" alt="image" src="https://github.com/user-attachments/assets/9ea7f58b-b8cb-47d0-8cfb-6074658161cf" />
+
 
 ---
 
